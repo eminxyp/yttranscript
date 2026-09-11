@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Transcript Çevirici</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #F0F7FF 0%, #E0F2FF 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #B3E5FC;
+            box-shadow: 0 2px 8px rgba(0, 172, 193, 0.08);
+        }
+
+        h1 {
+            color: #004D73;
+            font-size: 28px;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.75rem;
+            color: #004D73;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        select {
+            padding: 12px 14px;
+            border: 1px solid #B3E5FC;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #00ACC1;
+            box-shadow: 0 0 0 3px rgba(0, 172, 193, 0.1);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: #00ACC1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            background: #008BA3;
+        }
+
+        button:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            background: #E0E0E0;
+            cursor: not-allowed;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .transcript-box {
+            background: #F8FBFC;
+            border: 1px solid #B3E5FC;
+            border-radius: 8px;
+            padding: 1.5rem;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            color: #333;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-bottom: 1rem;
+        }
+
+        .search-box {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+        }
+
+        .message {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .success {
+            background: #E8F5E9;
+            color: #2E7D32;
+            border: 1px solid #81C784;
+        }
+
+        .error {
+            background: #FFEBEE;
+            color: #C62828;
+            border: 1px solid #EF5350;
+        }
+
+        .info {
+            background: #E3F2FD;
+            color: #1565C0;
+            border: 1px solid #64B5F6;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state p {
+            margin: 0.5rem 0;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .card {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            input[type="text"] {
+                min-width: unset;
+                width: 100%;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="card">
+            <h1>📹 YouTube Transcript Çevirici</h1>
+            <p class="subtitle">Videoları transkript edin, 9 dile çevirin ve indirin</p>
+        </div>
+
+        <!-- Input -->
+        <div class="card">
+            <label>YouTube Video URL'i</label>
+            <div class="input-group">
+                <input
+                    type="text"
+                    id="videoUrl"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    onkeypress="if(event.key==='Enter') fetchTranscript()"
+                >
+                <button onclick="fetchTranscript()" id="fetchBtn">Transcript Çek</button>
+            </div>
+        </div>
+
+        <!-- Result -->
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://ytttranscript.YOUR_WORKERS_DOMAIN.workers.dev';
+
+        async function fetchTranscript() {
+            const url = document.getElementById('videoUrl').value.trim();
+            if (!url) {
+                showError('Lütfen bir URL girin');
+                return;
+            }
+
+            const btn = document.getElementById('fetchBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Yükleniyor...';
+
+            try {
+                const response = await fetch(`${API_URL}/transcript`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    window.transcript = data.transcript;
+                    showTranscript(data.transcript);
+                } else {
+                    showError(data.error || 'Hata oluştu');
+                }
+            } catch (error) {
+                showError('Bağlantı hatası: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Transcript Çek';
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('result').innerHTML = `
+                <div class="card">
+                    <div class="error">❌ ${escapeHtml(message)}</div>
+                </div>
+            `;
+        }
+
+        function showInfo(message) {
+            const result = document.getElementById('result');
+            const existing = result.innerHTML;
+            result.innerHTML = `<div class="card"><div class="info">${message}</div>${existing}</div>`;
+        }
+
+        function showTranscript(text) {
+            document.getElementById('result').innerHTML = `
+                <div class="card">
+                    <div class="controls">
+                        <select id="langSelect">
+                            <option value="tr">🇹🇷 Türkçe</option>
+                            <option value="en">🇬🇧 İngilizce</option>
+                            <option value="de">🇩🇪 Almanca</option>
+                            <option value="ar">🇸🇦 Arapça</option>
+                            <option value="fr">🇫🇷 Fransızca</option>
+                            <option value="es">🇪🇸 İspanyolca</option>
+                            <option value="pt">🇵🇹 Portekizce</option>
+                            <option value="ru">🇷🇺 Rusça</option>
+                            <option value="pl">🇵🇱 Lehçe</option>
+                        </select>
+                        <button onclick="translateText()">🌐 Çevir</button>
+                        <button onclick="copyText()">📋 Kopyala</button>
+                        <button onclick="downloadText()">💾 İndir</button>
+                    </div>
+
+                    <div class="search-box">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="Transcript'te ara..."
+                            onkeyup="filterTranscript()"
+                        >
+                    </div>
+
+                    <div class="transcript-box" id="transcriptBox">${escapeHtml(text)}</div>
+                </div>
+            `;
+        }
+
+        function filterTranscript() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const box = document.getElementById('transcriptBox');
+            
+            if (!query) {
+                box.textContent = window.transcript;
+                return;
+            }
+
+            const lines = window.transcript.split('\n');
+            const filtered = lines.filter(line => line.toLowerCase().includes(query)).join('\n');
+            box.textContent = filtered || 'Sonuç bulunamadı';
+        }
+
+        async function translateText() {
+            const lang = document.getElementById('langSelect').value;
+            if (lang === 'tr') {
+                document.getElementById('transcriptBox').textContent = window.transcript;
+                return;
+            }
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳ Çevriliyor...';
+
+            try {
+                const response = await fetch(`${API_URL}/translate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: window.transcript, lang })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('transcriptBox').textContent = data.translated;
+                    showInfo(`✓ ${document.getElementById('langSelect').selectedOptions[0].text}'ye çevrildi`);
+                } else {
+                    showError(data.error || 'Çeviri hatası');
+                }
+            } catch (error) {
+                showError('Çeviri hatası: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🌐 Çevir';
+            }
+        }
+
+        function copyText() {
+            const text = document.getElementById('transcriptBox').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✓ Panoya kopyalandı!');
+            });
+        }
+
+        function downloadText() {
+            const text = document.getElementById('transcriptBox').textContent;
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+            element.setAttribute('download', 'transcript.txt');
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>

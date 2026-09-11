@@ -1,0 +1,15 @@
+{
+  "name": "ytttranscript-worker",
+  "version": "1.0.0",
+  "description": "YouTube Transcript Çevirici - Cloudflare Worker",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler publish",
+    "dev": "wrangler dev"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "wrangler": "^3.48.0"
+  }
+}
